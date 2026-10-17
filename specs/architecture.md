@@ -158,8 +158,13 @@ docs/             Diagram, process log, report source
 - **Owned state:** `actions_used`, `consecutive_rejections`, the append-only
   `trace`, and `terminal_status` with its reason.
 - **Public interface (summary):**
-  - `handle(tool_name, raw_args) -> Observation`: validates, executes through
-    `tools`, records the step in the trace, and updates the counters
+  - `validate(tool_name, raw_args) -> Approval | Observation`: applies the
+    policies using read-only checks; returns an approval or a rejection
+  - `execute(approval) -> Observation`: runs the approved call through `tools`
+  - `handle(tool_name, raw_args)`: `validate` followed by `execute`
+  - `reject_extra_call(...)`: the P10 rejection for extra calls in one turn
+  - Every handled call updates the counters and appends one trace entry
+  - (Full detail: `specs/controller.md`)
   - `record_no_action()`: marks a model response that contained no tool call
   - `check_terminal() -> TerminalStatus | None`: applies the ordered checks in §6
 - **Policies (each producing a rejection without any mutation):**
@@ -171,7 +176,9 @@ docs/             Diagram, process log, report source
   5. **P5** — Reject a placement in a filled cell (the agent must undo first).
   6. **P6** — Reject a placement that duplicates a digit in the row, column or box.
   7. **P7** — Reject `undo` when the undo stack is empty.
-  8. **P8** — Reject a `kb_tell` that does not parse or would make the KB inconsistent.
+  8. **P8** — Reject a KB request (`kb_tell`/`kb_ask`) whose formula is malformed,
+     too long or uses an invalid cell variable; a `kb_tell` that would make the KB
+     inconsistent; or any KB request while the KB is inconsistent.
   9. **P9** — Reject a `submit` that fails validation (an incomplete or invalid board).
   10. **P10** — One tool call per model turn. If a response contains several,
       only the first is executed; each extra call gets a rejection observation.
@@ -189,18 +196,20 @@ docs/             Diagram, process log, report source
 ### 4.8 `agent` — LangGraph ReAct loop
 
 - **Responsibility:** Run the bounded loop shown in the design diagram.
-- **Graph state (LangGraph):** `messages` (the conversation the model sees) and
-  `session_id`. The `Session` itself stays outside the model-visible state and
-  is looked up through a registry that only the graph nodes can reach.
+- **Graph state (LangGraph):** `messages` (the conversation) and `pending`
+  (the approved call for the current turn). The `Session` and `Controller` are
+  passed to the nodes through LangGraph's run config, never through graph
+  state, so model output cannot reach them except through controller methods.
+  (Full detail: `specs/agent.md`)
 - **Nodes and edges:**
 
 ```
 START -> llm -> controller --(terminal already set)--> END
-                     |
-                     v
-                   tool -> continue? --(terminal)--> END
-                     ^          |
-                     |          +--(otherwise)--> llm
+                    |
+                    v
+                  tool -> continue? --(terminal)--> END
+                              |
+                              +--(otherwise)--> llm
 ```
 
   - `llm`: calls the chat model with the tools bound and **tool choice forced**
@@ -222,7 +231,9 @@ START -> llm -> controller --(terminal already set)--> END
 
 - `prompts`: builds the system prompt (the rules, the tool strategy, and the
   coordinate conventions) and the first user message containing the initial
-  board. Building the initial board view does not cost an action.
+  board. Each turn the model also receives a regenerated status message (the
+  current board, budget, undo depth and KB fact count) together with only the
+  last 12 complete turns of history (D13). The status message costs no action.
 - `llm`: `make_model(config)` returns a LangChain `ChatOpenAI` pointed at the school's
   OpenAI-compatible Golem gateway (`GOLEM_BASE_URL`, default `http://golem:4000/v1`,
   reachable over Tailscale). The model name comes from `SUDOKU_MODEL`. The key
@@ -305,3 +316,4 @@ in `RunResult`.
 | D10 | Rows, columns and boxes are numbered 1–9 | Matches how people read Sudoku and suits the `v{r}{c}{d}` names. |
 | D11 | One tool call per turn | Matches the assignment's agent-environment loop. |
 | D12 | The LLM is the school Golem gateway (OpenAI-compatible) via `ChatOpenAI`; model chosen by `SUDOKU_MODEL` | Provided by the course. `scripts/check_golem.py` verifies forced tool calling for each model before we rely on it. |
+| D13 | The model sees a sliding window of the last 12 turns plus a per-turn status message with the current board | With 500 actions the full history would slow every call and strain the context window; the full trace is still kept by the application. |
