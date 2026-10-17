@@ -1,0 +1,10 @@
+Golem tool-calling smoke test (scripts/check_golem.py), run 2026-10-17 by S. Szabo over Tailscale.
+Prompt: place digit 4 at row 1, column 3. Correct call: place_number(row=1, col=3, digit=4).
+
+Model                tool_choice=auto   required   named
+Gemma-4-26B-A4B      OK 11.3s           OK 5.3s    OK 5.3s
+Qwen3.8-27B          OK 12.0s           OK 6.0s    OK 6.0s
+Qwen3.8-Flash-Next   OK  6.7s           OK 6.2s    OK 6.2s
+
+All models returned exactly one correct call in every mode.
+Decision: force tool calls with tool_choice="required"; default model Qwen3.8-27B (configurable via SUDOKU_MODEL).
