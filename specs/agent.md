@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.agent` (ReAct loop), `prompts`, `llm`, `cli`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v2 (orchestrator review 2026-10-17; v2 amends §5 strategy and §8 puzzles)**
 Parent: `specs/architecture.md` §4.8–4.9, §5, §6. Uses `controller`
 (`specs/controller.md`) and `tools` (`specs/tools.md`).
 
@@ -140,8 +140,11 @@ must state:
 4. the recommended strategy, in this order:
    - place any `forced` cells reported by the last placement;
    - use `get_candidates` and place cells that have a single candidate;
-   - for harder cells, `kb_ask` a cell variable — `entailed` means place it,
-     `contradicted` means rule that digit out;
+   - when no single-candidate cell remains, pick the empty cell with the fewest
+     candidates and call `kb_infer_cell` on it; place the proven digit if one is
+     returned; use `kb_ask` for specific questions, and `kb_tell` to record
+     helper facts;
+   - logic calls on the hardest puzzles can take a while, so prefer cheap tools first;
    - if a placement reports `dead` cells or `kb_consistent: false`, `undo`
      immediately;
    - when `empty` is 0, `submit`;
@@ -172,11 +175,27 @@ status message.
   scripted item.
 - When the script is exhausted, it returns an `AIMessage` with no tool calls.
 
-## 8. Bundled puzzles
+## 8. Puzzles
 
-`puzzles/easy.txt`, `puzzles/medium.txt` and `puzzles/hard.txt`: each file holds
-the puzzle (9 lines), a blank line, then the solution (9 lines). Each puzzle
-must have a unique solution, and the solution must pass `validate_solution`.
+- **Puzzle files** (`*.txt`) contain the puzzle as 9 lines, or 1 line of 81
+  characters, using `0` or `.` for empty cells.
+  - They may **optionally** contain a blank line followed by the solution, in the
+    same format.
+  - Lines starting with `#` are comments.
+  - Puzzles from elsewhere, such as instructor-provided boards, can be used
+    as-is without a solution. Success is always decided by `submit`'s validator.
+- **Bundled puzzles** used by the tests, with sources cited in `puzzles/README.md`.
+  Each one is verified, by an exhaustive search, to have exactly one solution,
+  and stores that solution:
+
+  | File | Source | Givens | Technique needed |
+  |---|---|---|---|
+  | `puzzles/easy.txt` | Wikipedia "Sudoku" example | 30 | single-candidate logic only |
+  | `puzzles/hard.txt` | Peter Norvig, "Solving Every Sudoku Puzzle" (hard1) | 17 | beyond single candidates |
+  | `puzzles/expert.txt` | Arto Inkala (2012) | 21 | beyond single candidates; KB worst case |
+
+- `puzzles.load(path) -> Puzzle(name, puzzle: str, solution: str | None)`
+  parses this format. It raises `ValueError` on malformed content.
 
 ## 9. Test obligations (black-box, fake model, no network)
 
@@ -195,7 +214,7 @@ must have a unique solution, and the solution must pass `validate_solution`.
 - **Invalid JSON arguments** become a P3 rejection, not a crash.
 - **Model errors:** one exception followed by a valid response recovers (retry);
   two consecutive exceptions end `MODEL_ERROR`.
-- **Binding:** `tool_choice="required"` and all 12 tools are bound.
+- **Binding:** `tool_choice="required"` and all 13 tools are bound.
 - **History window:** with `history_window=2`, the model input holds the system
   message, at most 2 complete turns, and the status message, and never an
   orphaned `ToolMessage`.

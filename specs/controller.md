@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.controller`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v1 (orchestrator review 2026-10-17)**
 Parent: `specs/architecture.md` §4.6, §6, §8. Uses `tools` (`specs/tools.md`).
 
 ## 1. Purpose
@@ -108,8 +108,8 @@ checks run in this order, and the first failure produces a rejection
   `candidates`/peers, `depth`, `validate_solution`). The board and KB enforce
   the same rules again defensively.
 - P8 (KB formula problems and inconsistent tells) can only be decided by
-  `logic` itself. It is detected during `execute`: a `kb_tell` or `kb_ask`
-  outcome rejected by `logic` is reported as a **P8** rejection. `logic`
+  `logic` itself. It is detected during `execute`: a `kb_tell`, `kb_ask` or
+  `kb_infer_cell` outcome rejected by `logic` is reported as a **P8** rejection. `logic`
   guarantees that such a rejection changes nothing.
 - If every check passes, `validate` returns an `Approval` and changes nothing.
 

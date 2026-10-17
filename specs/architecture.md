@@ -53,10 +53,11 @@ sudoku_agent/
   agent.py        LangGraph StateGraph: llm -> controller -> tool -> continue?
   prompts.py      System prompt and initial user message construction
   llm.py          Chat-model factory (provider-agnostic, config-driven)
+  puzzles.py      Puzzle-file loader (solution optional)
   cli.py          Command-line entry point: run one puzzle, print the trace
 proplogic/        Vendored course package (unmodified): parser, CNF, KB, DPLL
                   (top-level so its own tests import it unchanged)
-puzzles/          Sample puzzles (easy / medium / hard) as text files
+puzzles/          Bundled verified puzzles (easy / hard / expert) + sources
 specs/            This document and one functional spec per module
 tests/            Black-box spec-derived tests (+ marked white-box tests)
 docs/             Diagram, process log, report source
@@ -145,6 +146,7 @@ docs/             Diagram, process log, report source
 | `undo` | — | Undoes the last placement and rolls back agent KB facts told since it. |
 | `kb_tell` | `formula` | Adds a fact or rule to the agent layer. |
 | `kb_ask` | `formula` | Returns ENTAILED, CONTRADICTED or UNRESOLVED. Read-only. |
+| `kb_infer_cell` | `row, col` | Per-cell sweep: the proven digit, or which candidates are ruled out. Read-only. |
 | `kb_clear` | — | Clears the agent layer only. |
 | `submit` | — | Runs `validation`; accepted means solved. |
 
@@ -317,3 +319,7 @@ in `RunResult`.
 | D11 | One tool call per turn | Matches the assignment's agent-environment loop. |
 | D12 | The LLM is the school Golem gateway (OpenAI-compatible) via `ChatOpenAI`; model chosen by `SUDOKU_MODEL` | Provided by the course. `scripts/check_golem.py` verifies forced tool calling for each model before we rely on it. |
 | D13 | The model sees a sliding window of the last 12 turns plus a per-turn status message with the current board | With 500 actions the full history would slow every call and strain the context window; the full trace is still kept by the application. |
+| D14 | Cache proven KB answers, cleared on any KB change (from the Rover `LogicAgent`'s `proven_safe_tiles`) | Repeated questions cost no solver time. |
+| D15 | `kb_infer_cell` tool: a per-cell sweep of all candidates (from Rover's `inferred_safe_tiles`), one cell per call | One action instead of up to 9 `kb_ask` calls; stops short of a whole-board sweep that would solve the puzzle for the model. |
+| D16 | No timeouts on KB operations; generous performance targets (≤ 10 s per ask on easy/hard, ≤ 60 s on expert) | Orchestrator decision: let the model get every answer it needs. Keeps the vendored solver unchanged (option A over writing our own solver or using `pycosat`). |
+| D17 | Bundled puzzles easy / hard / expert, each verified to have a unique solution; solutions optional in other puzzle files | Instructor boards can be dropped in without solutions. |

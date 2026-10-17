@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.tools`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v2 (orchestrator review 2026-10-17; v2 adds `kb_infer_cell`)**
 Parent: `specs/architecture.md` §4.5. Uses `board` (`specs/board.md`), `logic`
 (`specs/logic.md`) and `validation` (`specs/validation.md`).
 
@@ -29,6 +29,7 @@ schema errors.
 | `undo` | *(none)* |
 | `kb_tell` | `formula: str` (min length 1) |
 | `kb_ask` | `formula: str` (min length 1) |
+| `kb_infer_cell` | `row: int 1–9`, `col: int 1–9` |
 | `kb_clear` | *(none)* |
 | `submit` | *(none)* |
 
@@ -78,10 +79,11 @@ cells, for example `"53..7...."`.
 | `undo` | See §4.2. | `EMPTY_STACK` |
 | `kb_tell` | `{"facts": count of agent facts}` | `PARSE_ERROR`, `INVALID_SYMBOL`, `TOO_LONG`, `INCONSISTENT`, `KB_INCONSISTENT` |
 | `kb_ask` | `{"answer": "entailed" \| "contradicted" \| "unresolved"}` | `PARSE_ERROR`, `INVALID_SYMBOL`, `TOO_LONG`, `KB_INCONSISTENT` |
+| `kb_infer_cell` | `{"row", "col", "digit": d or null, "possible": [..], "ruled_out": [..]}` | `KB_INCONSISTENT` |
 | `kb_clear` | `{"removed": n}` | — |
 | `submit` | `{"result": "SOLVED"}` | `INVALID_SOLUTION` (§4.3) |
 
-Read tools and `kb_ask` never change any state.
+Read tools, `kb_ask` and `kb_infer_cell` never change the board or the KB's content (only `logic`'s answer cache).
 
 ### 4.1 `place_number`
 
@@ -122,7 +124,7 @@ Read tools and `kb_ask` never change any state.
 
 - **Schemas:** valid arguments are accepted. Missing fields, extra fields, out
   of range (0, 10), string, float and bool values are all schema errors.
-  `tool_definitions()` has exactly the 12 tool names.
+  `tool_definitions()` has exactly the 13 tool names.
 - **Each read tool** returns the specified `data` for a known puzzle and leaves
   the board and KB unchanged.
 - **`place_number`:**
@@ -132,6 +134,8 @@ Read tools and `kb_ask` never change any state.
     in the message.
 - **`undo`:** restores the board, rolls back facts told after the placement and
   keeps earlier ones; `EMPTY_STACK` on a fresh session.
+- **`kb_infer_cell`:** returns the proven digit on an easy-puzzle cell and leaves
+  the board unchanged.
 - **`kb_tell`, `kb_ask`, `kb_clear`:** the codes pass through from `logic`, and
   `kb_clear` leaves rule-based answers unchanged.
 - **`submit`:** the solved board is accepted; an incomplete board is rejected

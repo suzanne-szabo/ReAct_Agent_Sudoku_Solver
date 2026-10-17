@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.logic`
 
-Status: **Approved v1 (orchestrator review 2026-10-17)**
+Status: **Approved v2 (orchestrator review 2026-10-17; v2 adds §5.7 infer_cell, §5.8 cache, revised §6)**
 Parent: `specs/architecture.md` §4.4, §7. Uses the vendored `proplogic` package
 (architecture §4.3) without modifying it.
 
@@ -86,6 +86,15 @@ class TellResult:
     message: str
 
 @dataclass(frozen=True)
+class InferResult:
+    accepted: bool
+    digit: int | None        # the proven digit, if any
+    possible: tuple[int, ...]   # candidates not ruled out
+    ruled_out: tuple[int, ...]  # candidates proven impossible
+    reason: str | None       # None | KB_INCONSISTENT
+    message: str
+
+@dataclass(frozen=True)
 class AskResult:
     accepted: bool
     answer: Answer | None    # None when not accepted
@@ -101,6 +110,7 @@ class SudokuKB:
     def clear_agent_facts(self) -> int            # returns the number removed
     def rollback_to(self, depth: int) -> int      # returns the number removed
     def agent_facts(self) -> tuple[tuple[int, str], ...]
+    def infer_cell(self, row: int, col: int) -> InferResult
 ```
 
 `SudokuKB` reads the board it is given but never mutates it. It keeps its own
@@ -154,11 +164,54 @@ accepted undo.
 - Entries told at the undone depth or earlier are kept.
 - `depth` must be an `int` ≥ 0; otherwise the call raises `ValueError` or `TypeError`.
 
+### 5.7 `infer_cell(row, col) -> InferResult`
+
+A per-cell inference sweep, adapted from the Rover `LogicAgent`'s
+`inferred_safe_tiles`. It asks the KB about every board candidate of a
+single cell in one call. `row` and `col` must be `int` 1–9; otherwise it raises
+`TypeError` or `ValueError`.
+
+- **Filled cell:** `accepted=True`, `digit` = the cell's digit, `possible=(digit,)`,
+  `ruled_out=()`.
+- **KB inconsistent:** `accepted=False`, `reason="KB_INCONSISTENT"`, and nothing else is computed.
+- **Empty cell:** for each `d` in `board.candidates(row, col)`, in ascending order:
+  - `d` is **ruled out** if KB ⊨ `~v{r}{c}{d}`;
+  - `d` is the **digit** if KB ⊨ `v{r}{c}{d}`.
+- **Consistency of the result:** if `digit` is not `None`, then
+  `possible == (digit,)` and `ruled_out` is every other candidate. That follows
+  from the at-most-one-digit rule, so the implementation may stop as soon as a
+  digit is proven. Otherwise `possible` is the candidates not ruled out, in
+  ascending order.
+- `infer_cell` never changes the KB except for filling the answer cache (§5.8).
+
+### 5.8 Proven-answer cache
+
+Adapted from the Rover `LogicAgent`'s `proven_safe_tiles` set. `SudokuKB`
+memoizes the result of each satisfiability check it performs for `ask`,
+`infer_cell` and `is_consistent`. The cache is keyed by the formula text and
+**cleared whenever the KB content changes**: `rebuild`, an accepted `tell`,
+`clear_agent_facts`, or a `rollback_to` that removes at least one entry.
+
+The cache never changes an answer. It only makes repeated questions instant.
+
 ## 6. Non-functional requirements
 
-- **Performance:** on each bundled puzzle (easy, medium and hard), from the
-  initial board, a single `ask` of a cell variable completes in **≤ 3 s** on
-  the development machine. (Benchmark during design: ≤ 0.7 s.)
+- **No timeouts (orchestrator decision, 2026-10-17):** no KB operation is
+  interrupted. A slow proof runs to completion, so the model always gets an
+  answer. The bounds below are test targets, not runtime limits.
+- **Performance targets** for the starting board of each bundled puzzle,
+  measured on the development machine and checked by tests marked `slow`:
+
+  | Puzzle | Single `ask` of a cell variable | `infer_cell` on one empty cell |
+  |---|---|---|
+  | easy | ≤ 10 s | ≤ 30 s |
+  | hard | ≤ 10 s | ≤ 30 s |
+  | expert | ≤ 60 s | ≤ 180 s |
+
+  Design benchmark (2026-10-17): easy ≈ 0.04 s; hard 0.2–0.7 s; expert 1–17 s
+  per `ask`. The vendored DPLL branches on symbols in alphabetical order, and
+  the expert puzzle's opening position is its worst case. Queries get faster
+  as cells are filled.
 - **Recursion:** `proplogic`'s DPLL recurses once per assigned symbol, so
   `SudokuKB` must ensure the recursion limit is high enough for the largest
   rule layer. It restores the previous limit afterward.
@@ -182,4 +235,10 @@ accepted undo.
   leaves the depth 0 and 1 facts.
 - **Reserved symbols:** `v105` and `v000` give `INVALID_SYMBOL`; `v5370` is
   accepted as an ordinary symbol.
-- **Performance** (marked `slow`): the §6 bound on the bundled hard puzzle.
+- **`infer_cell`:** on the easy puzzle, a cell returns its solution digit with
+  every other candidate ruled out; a filled cell returns its own digit; with an
+  inconsistent KB it returns `KB_INCONSISTENT`.
+- **Cache transparency:** asking the same formula twice gives the same answer.
+  After a `tell` that changes the answer (for example `ask("p")` is
+  `UNRESOLVED`, then `tell("p")`), the new answer is returned, not the cached one.
+- **Performance** (marked `slow`): the §6 targets for each bundled puzzle.
