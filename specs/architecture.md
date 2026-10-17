@@ -1,6 +1,6 @@
 # Architecture Specification — ReAct Sudoku Agent
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v1 (orchestrator review 2026-10-17)**
 Owner (design authority): Suzanne Szabo
 Implementation: coding agent (Claude), working from this document and the per-module specs.
 
@@ -176,7 +176,7 @@ docs/             Diagram, process log, report source
   10. **P10** — One tool call per model turn. If a response contains several,
       only the first is executed; each extra call gets a rejection observation.
 - **Budget:** Every tool call the model makes, accepted or rejected, read or
-  write, costs 1 action. The default limit is **200**, and it is configurable.
+  write, costs 1 action. The default limit is **500**, and it is configurable.
 - **Depends on:** `tools`, `session`.
 
 ### 4.7 `session` — composition root for one run
@@ -252,7 +252,7 @@ earlier tool calls, and the observations returned for them. Nothing else.
 the terminal status:
 
 1. **`SOLVED`** — the last action was a `submit` accepted by `validation`.
-2. **`ACTION_LIMIT`** — `actions_used >= max_actions` (default 200).
+2. **`ACTION_LIMIT`** — `actions_used >= max_actions` (default 500).
 3. **`REJECTION_LIMIT`** — `consecutive_rejections >= max_consecutive_rejections` (default 5).
 4. **`NO_ACTION`** — the model's last response contained no tool call.
 5. **`MODEL_ERROR`** — the model call raised an exception.
@@ -300,7 +300,7 @@ in `RunResult`.
 | D5 | `get_candidates` tool, and `place_number` reports newly forced cells | Exposes cascades cheaply without auto-placing digits. |
 | D6 | Undo rolls back agent facts by checkpoint | Keeps the KB in sync with the board without discarding valid earlier work. |
 | D7 | `kb_clear` clears agent facts only | The Sudoku rules are application-owned and protected. |
-| D8 | Every tool call costs 1 action; limit 200; 5 consecutive rejections end the run | Bounded, simple and favors efficiency. |
+| D8 | Every tool call costs 1 action; limit 500 (raised from 200 by orchestrator review, 2026-10-17); 5 consecutive rejections end the run | Generous safety bound; efficiency is measured by actions used, not by the cap. |
 | D9 | Placements that conflict with the row, column or box are rejected; non-conflicting wrong placements are allowed | Keeps undo and recovery meaningful while blocking obvious errors. |
 | D10 | Rows, columns and boxes are numbered 1–9 | Matches how people read Sudoku and suits the `v{r}{c}{d}` names. |
 | D11 | One tool call per turn | Matches the assignment's agent-environment loop. |

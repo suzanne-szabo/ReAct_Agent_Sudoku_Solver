@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.board`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v1 (orchestrator review 2026-10-17)**
 Parent: `specs/architecture.md` §4.1. Conventions (1–9 coordinates, box
 numbering, `0` = empty) are defined in architecture §2.
 

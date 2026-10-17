@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.validation`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v1 (orchestrator review 2026-10-17)**
 Parent: `specs/architecture.md` §4.2.
 
 ## 1. Purpose

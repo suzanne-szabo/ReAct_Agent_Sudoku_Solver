@@ -1,6 +1,6 @@
 # Functional Specification — `sudoku_agent.logic`
 
-Status: **Draft v1 — awaiting orchestrator review**
+Status: **Approved v1 (orchestrator review 2026-10-17)**
 Parent: `specs/architecture.md` §4.4, §7. Uses the vendored `proplogic` package
 (architecture §4.3) without modifying it.
 
