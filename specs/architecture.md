@@ -223,9 +223,11 @@ START -> llm -> controller --(terminal already set)--> END
 - `prompts`: builds the system prompt (the rules, the tool strategy, and the
   coordinate conventions) and the first user message containing the initial
   board. Building the initial board view does not cost an action.
-- `llm`: `make_model(config)` returns a LangChain chat model chosen by
-  environment variables (provider and model name). API keys are read from the
-  environment and never written into the repository.
+- `llm`: `make_model(config)` returns a LangChain `ChatOpenAI` pointed at the school's
+  OpenAI-compatible Golem gateway (`GOLEM_BASE_URL`, default `http://golem:4000/v1`,
+  reachable over Tailscale). The model name comes from `SUDOKU_MODEL`. The key
+  (`GOLEM_API_KEY`) is read from the environment or an ignored `.env` file and never
+  committed; `.env.example` documents the variables.
 - `cli`: `python -m sudoku_agent puzzles/easy1.txt [--max-actions N] [--verbose]`.
 
 ## 5. Allowed interactions
@@ -302,4 +304,4 @@ in `RunResult`.
 | D9 | Placements that conflict with the row, column or box are rejected; non-conflicting wrong placements are allowed | Keeps undo and recovery meaningful while blocking obvious errors. |
 | D10 | Rows, columns and boxes are numbered 1–9 | Matches how people read Sudoku and suits the `v{r}{c}{d}` names. |
 | D11 | One tool call per turn | Matches the assignment's agent-environment loop. |
-| D12 | The LLM provider is chosen by configuration (open) | The spec does not depend on it; it will be decided before the end-to-end runs. |
+| D12 | The LLM is the school Golem gateway (OpenAI-compatible) via `ChatOpenAI`; model chosen by `SUDOKU_MODEL` | Provided by the course. `scripts/check_golem.py` verifies forced tool calling for each model before we rely on it. |
