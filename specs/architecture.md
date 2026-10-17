@@ -46,7 +46,6 @@ Tests are derived from those specifications.
 sudoku_agent/
   board.py        Board: puzzle state, placement, undo, views, candidates
   validation.py   Independent solution validator (pure function)
-  proplogic/      Vendored course package (unmodified): parser, CNF, KB, DPLL
   logic.py        SudokuKB: wraps proplogic for Sudoku; rule layer + agent facts
   tools.py        Typed tool schemas (Pydantic) + tool executors -> Observation
   controller.py   Policies, action budget, trace, ordered terminal checks
@@ -55,6 +54,8 @@ sudoku_agent/
   prompts.py      System prompt and initial user message construction
   llm.py          Chat-model factory (provider-agnostic, config-driven)
   cli.py          Command-line entry point: run one puzzle, print the trace
+proplogic/        Vendored course package (unmodified): parser, CNF, KB, DPLL
+                  (top-level so its own tests import it unchanged)
 puzzles/          Sample puzzles (easy / medium / hard) as text files
 specs/            This document and one functional spec per module
 tests/            Black-box spec-derived tests (+ marked white-box tests)
@@ -95,7 +96,7 @@ docs/             Diagram, process log, report source
   and every row, column and box is a permutation of 1–9.
 - **Depends on:** nothing.
 
-### 4.3 `proplogic` — vendored propositional logic package
+### 4.3 `proplogic` — vendored propositional logic package (repo root)
 
 - **Responsibility:** Formula parsing, CNF conversion, a clause store, and DPLL
   entailment and consistency checks.
