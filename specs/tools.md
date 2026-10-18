@@ -99,8 +99,8 @@ Read tools, `kb_ask` and `kb_infer_cell` never change the board or the KB's cont
     "kb_consistent": true,
     "empty": n}
    ```
-4. The `message` summarizes the result, for example
-   `"Placed 4 at r1c3. Forced: r1c4=6, r2c3=2."`
+4. The `message` summarizes the result and must name each forced cell in the
+   form `r{R}c{C}={D}`, for example `"Placed 4 at r1c3. Forced: r1c4=6, r2c3=2."`
    - If `dead` is non-empty or `kb_consistent` is false, the message must also
      say: `"This placement leads to a contradiction; undo it."`
 

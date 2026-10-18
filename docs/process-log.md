@@ -17,4 +17,5 @@ A running record of process events: spec revisions, findings from tests, and cod
   1. `Session` attribute names (`board`, `kb`, `original_puzzle`, `config`) — architecture §4.7.
   2. `puzzles.load` output: `name` is the file stem, and the puzzle and solution are normalized to 81 characters with `0` for empty cells — agent §8.
   3. `.env` lookup location: the current working directory, never overriding existing variables — agent §6.
+  4. The forced-cell format in `place_number` messages (`r{R}c{C}={D}`) — tools §4.1 — was only an example; it is now required.
   Without these, the tests would have had to guess, and the guesses would have locked in implementation details.
