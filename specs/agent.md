@@ -164,7 +164,10 @@ status message.
 ## 6. `llm` and `cli`
 
 - `llm.make_model(config)` returns
-  `ChatOpenAI(base_url=GOLEM_BASE_URL, api_key=GOLEM_API_KEY, model=config.model_name, temperature=0, timeout=120)`.
+  `ChatOpenAI(base_url=GOLEM_BASE_URL, api_key=GOLEM_API_KEY, model=config.model_name, temperature=0, timeout=120, max_retries=0)`.
+  `max_retries=0` disables the client library's own hidden retries, so §2.1's single retry is the only
+  one and a failed call costs at most about 2 × 120 s. *(v3: a live diagnostic showed one call waiting 371 s
+  because of the library's default two retries.)*
   - It reads `.env` from the current working directory if present (via
     `python-dotenv`), without overriding variables already set.
   - It raises a clear `RuntimeError` if `GOLEM_API_KEY` is missing.

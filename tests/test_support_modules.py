@@ -127,6 +127,7 @@ def test_make_model_configures_chat_openai(monkeypatch, tmp_path):
     assert isinstance(m, ChatOpenAI)
     assert m.model_name == "Gemma-4-26B-A4B"
     assert m.temperature == 0
+    assert m.max_retries == 0          # agent §6 (v3): no hidden library retries
     assert str(m.openai_api_base).startswith("http://example.invalid:4000/v1")
 
 

@@ -33,3 +33,13 @@ A running record of process events: spec revisions, findings from tests, and cod
      represent. **Resolution:** the spec was amended; the reason is reported in `RunResult.reason`.
 - The reviewer checked the module boundaries by searching the code: only `tools` calls state-changing methods; the graph reaches state only
   through `Controller`; `validation` does not import `board`; `proplogic` is unmodified; no other solver is used.
+
+## 2026-10-18 — First live runs against Golem
+- First run (Qwen3.8-27B, easy): step 1 `read_board` was wasted (the board is already in the status message); step 2 took
+  over a minute and tried to place in a given cell, r1c5 (the model miscounted columns). The controller rejected it (P4) with no
+  state change.
+- `scripts/check_latency.py` (the agent's real first turn, three models, thinking on/off): Gemma-4-26B-A4B took 0.6–1.9 s and
+  chose `get_candidates(1,3)`; Qwen3.8-27B took 7–10 s and chose `read_board`; Qwen3.8-Flash-Next was erratic (10 s to 371 s).
+  No model returned hidden reasoning, so the minute-long step was most likely gateway load.
+- Defect found: a call waited 371 s despite the 120 s timeout because LangChain's client added 2 hidden retries.
+  Fixed (`max_retries=0`); spec agent §6 amended and the test updated first.

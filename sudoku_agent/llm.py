@@ -52,4 +52,5 @@ def make_model(config: Config) -> ChatOpenAI:
         model=config.model_name,
         temperature=0,
         timeout=REQUEST_TIMEOUT_SECONDS,
+        max_retries=0,   # agent §2.1: the loop's single retry is the only retry
     )
