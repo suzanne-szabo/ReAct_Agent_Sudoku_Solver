@@ -175,6 +175,24 @@ class Board:
         used = set(self.row(r)) | set(self.col(c)) | set(self.box(box_of(r, c)))
         return [d for d in DIGITS if d not in used]
 
+    def forced_placements(self) -> list[Placement]:
+        """Placements forced by pencil-mark logic alone (board §4.3a, v4).
+
+        A cell with a single candidate, or the only cell of a row, column or box
+        that can still take a missing digit. Sorted, without duplicates.
+        """
+        candidates = {cell: self.candidates(*cell) for cell in self.empty_cells()}
+        forced = {(r, c, digits[0]) for (r, c), digits in candidates.items() if len(digits) == 1}
+        units = [[(r, c) for c in DIGITS] for r in DIGITS]
+        units += [[(r, c) for r in DIGITS] for c in DIGITS]
+        units += [box_cells(b) for b in DIGITS]
+        for unit in units:
+            for d in DIGITS:
+                spots = [cell for cell in unit if d in candidates.get(cell, ())]
+                if len(spots) == 1:
+                    forced.add((*spots[0], d))
+        return sorted(forced)
+
     def peers(self, r: int, c: int) -> set[Cell]:
         """The 20 cells sharing a row, column or box with (r, c)."""
         _check_index(r, "row")

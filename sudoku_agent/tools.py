@@ -67,7 +67,6 @@ TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
     "read_row": RowArgs,
     "read_col": ColArgs,
     "read_box": BoxArgs,
-    "get_candidates": CellArgs,
     "place_number": PlaceArgs,
     "undo": NoArgs,
     "kb_tell": FormulaArgs,
@@ -78,24 +77,47 @@ TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
 }
 
 _DESCRIPTIONS: dict[str, str] = {
-    "read_board": "Return the whole 9x9 board as text with '.' for empty cells; costs 1 action.",
-    "read_cell": "Return one cell's digit (0 if empty), whether it is a given, and its candidates; costs 1 action.",
-    "read_row": "Return the 9 cells of one row as a string ('.' = empty); costs 1 action.",
-    "read_col": "Return the 9 cells of one column as a string ('.' = empty); costs 1 action.",
-    "read_box": "Return the 9 cells of one box (1-9, row-major) as a string ('.' = empty); costs 1 action.",
-    "get_candidates": "Return the digits that do not conflict with the cell's row, column and box; costs 1 action.",
-    "place_number": "Place a digit in an empty cell and return newly forced cells, dead cells and KB consistency; costs 1 action.",
-    "undo": "Remove the most recent placement and the KB facts told since it; costs 1 action.",
-    "kb_tell": "Add a propositional fact or rule (variables v{row}{col}{digit}) to the knowledge base; costs 1 action.",
-    "kb_ask": "Ask whether a formula is entailed, contradicted or unresolved by the knowledge base; costs 1 action.",
-    "kb_infer_cell": "Prove which candidates of one cell are ruled out and, if decided, its digit; costs 1 action.",
-    "kb_clear": "Remove all facts you told the knowledge base (the Sudoku rules stay); costs 1 action.",
-    "submit": "Submit the board for independent validation; accepted only if it is a correct solution; costs 1 action.",
+    # Each description says what the tool returns and when to use it (tools §2, v4).
+    # Rows, columns and boxes are numbered 1-9; every call costs 1 action.
+    "place_number": (
+        "Place a digit (1-9) in an empty cell at row, col (1-9). Use it for a cell listed under "
+        "'Forced placements' or a digit proven by kb_infer_cell. Returns newly forced cells, dead "
+        "cells and whether the board can still be completed. Costs 1 action."),
+    "kb_infer_cell": (
+        "Use the logic engine on one empty cell (row, col 1-9) when no forced placement is listed: "
+        "proves which candidates are impossible and, if only one remains, the cell's digit. Start "
+        "with the first cell in the status message's empty-cells list. May take a few seconds on "
+        "hard puzzles. Costs 1 action."),
+    "undo": (
+        "Remove your most recent placement (and knowledge-base facts told since it). Use it as soon "
+        "as a placement reports dead cells or kb_consistent false. Costs 1 action."),
+    "submit": (
+        "Submit the board for independent validation once no empty cells remain. Only an accepted "
+        "submit solves the puzzle. Costs 1 action."),
+    "kb_ask": (
+        "Ask the logic engine about a custom formula over variables v{row}{col}{digit}; answers "
+        "entailed, contradicted or unresolved. For a whole cell, kb_infer_cell is usually better. "
+        "Costs 1 action."),
+    "kb_tell": (
+        "Add your own fact or rule (variables v{row}{col}{digit}) to the knowledge base for later "
+        "kb_ask questions. Rejected if it contradicts what is known. Costs 1 action."),
+    "kb_clear": (
+        "Remove every fact you told the knowledge base (the Sudoku rules stay). Rarely needed. "
+        "Costs 1 action."),
+    "read_cell": (
+        "Return one cell's digit (0 if empty), whether it is a given, and its candidates. Rarely "
+        "needed: the status message lists every empty cell's candidates. Costs 1 action."),
+    "read_board": (
+        "Return the whole board as text. Rarely needed: the status message already shows the "
+        "current board every turn. Costs 1 action."),
+    "read_row": "Return one row (1-9) as 9 characters, '.' for empty. Rarely needed: the board is in the status message. Costs 1 action.",
+    "read_col": "Return one column (1-9) as 9 characters, '.' for empty. Rarely needed: the board is in the status message. Costs 1 action.",
+    "read_box": "Return one box (1-9, row by row) as 9 characters, '.' for empty. Rarely needed: the board is in the status message. Costs 1 action.",
 }
 
 
 def tool_definitions() -> list[dict]:
-    """The 13 tools in the OpenAI function format accepted by ``bind_tools`` (tools §2)."""
+    """The 12 tools in the OpenAI function format accepted by ``bind_tools`` (tools §2)."""
     definitions = []
     for name, schema in TOOL_SCHEMAS.items():
         parameters = schema.model_json_schema()
@@ -172,13 +194,6 @@ def _read_col(session: Session, args: ColArgs) -> ToolOutcome:
 def _read_box(session: Session, args: BoxArgs) -> ToolOutcome:
     cells = _cells_text(session.board.box(args.box))
     return ToolOutcome(True, None, f"Box {args.box}: {cells}", {"box": args.box, "cells": cells})
-
-
-def _get_candidates(session: Session, args: CellArgs) -> ToolOutcome:
-    r, c = args.row, args.col
-    candidates = session.board.candidates(r, c)
-    return ToolOutcome(True, None, f"Candidates for r{r}c{c}: {candidates}",
-                       {"row": r, "col": c, "candidates": candidates})
 
 
 # ---------------------------------------------------------------- §4.1 place_number
@@ -278,7 +293,6 @@ _EXECUTORS: dict[str, Callable[[Session, BaseModel], ToolOutcome]] = {
     "read_row": _read_row,
     "read_col": _read_col,
     "read_box": _read_box,
-    "get_candidates": _get_candidates,
     "place_number": _place_number,
     "undo": _undo,
     "kb_tell": _kb_tell,
