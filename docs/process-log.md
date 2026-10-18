@@ -61,3 +61,8 @@ A running record of process events: spec revisions, findings from tests, and cod
 - Hard puzzle (Norvig hard1, 17 givens), Gemma: **SOLVED in 72 actions**: 64 placements, 7 `kb_infer_cell`, 1 submit,
   with 0 rejections, 0 reads and 0 undos (`docs/runs/2026-10-18_hard_gemma_v4.txt` and `.jsonl`). Whenever forced placements ran
   out, the model called `kb_infer_cell` as the v4 prompt directs; all 7 calls proved a digit and started new cascades.
+- Expert puzzle (Inkala 2012), Gemma: **SOLVED in 71 actions**: 60 placements, 10 `kb_infer_cell`, 1 submit, with 0 rejections
+  (`docs/runs/2026-10-18_expert_gemma_v4.txt` and `.jsonl`). Nothing was forced at the start, so the run opened with the logic engine;
+  all 10 proofs were correct and each started a new cascade of forced placements.
+- Summary for v4 + Gemma: 3/3 bundled puzzles solved, 0 rejections and 0 undos overall; actions above the minimum equal the number of
+  logic-engine proofs (easy +0, hard +7, expert +10).
