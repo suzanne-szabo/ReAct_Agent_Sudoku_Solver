@@ -17,6 +17,7 @@ produces can touch application state except through ``Controller`` methods.
 from __future__ import annotations
 
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Annotated, Callable, Optional, TypedDict
 
@@ -141,6 +142,9 @@ def _llm_node(state: AgentState, config: RunnableConfig) -> Command:
         except Exception as error:
             controller.record_model_error(error)
             return Command(goto="continue")
+    # A fresh id guarantees add_messages appends the reply instead of replacing an
+    # earlier message that happens to share its id (agent §2.1, v5).
+    ai = ai.model_copy(update={"id": f"ai-{uuid.uuid4().hex}"})
     return Command(update={"messages": [ai]}, goto="controller")
 
 

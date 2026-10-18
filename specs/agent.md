@@ -44,7 +44,9 @@ nothing the model produces can reach them except through `Controller` methods.
 2. If the call raises, retry **once** after 2 s. If the retry also fails, call
    `controller.record_model_error(e)` and route to `continue?`, which then ends
    with `MODEL_ERROR`.
-3. Append the returned `AIMessage` to `messages`.
+3. Give the returned `AIMessage` a fresh unique message id, then append it to `messages`. *(v5: LangGraph's
+   `add_messages` replaces, rather than appends, a message whose id is already present. A white-box test showed
+   that a reply reusing an earlier id crashed the controller node.)*
 
 ### 2.2 Node `controller`
 

@@ -66,3 +66,11 @@ A running record of process events: spec revisions, findings from tests, and cod
   all 10 proofs were correct and each started a new cascade of forced placements.
 - Summary for v4 + Gemma: 3/3 bundled puzzles solved, 0 rejections and 0 undos overall; actions above the minimum equal the number of
   logic-engine proofs (easy +0, hard +7, expert +10).
+
+## 2026-10-18 — White-box testing (after implementation)
+- Coverage of the black-box suite: **94% branch coverage**; `cli.py` was untested; there were small gaps in error paths.
+- `tests/test_whitebox.py` (marked `whitebox`) targets those lines: CLI behavior and exit codes, `python -m sudoku_agent`,
+  a missing API key, history-window edge cases, a foreign `Approval`, the box-only conflict message, an undecided
+  `infer_cell` on a two-solution board (a "deadly rectangle"), a non-sequence grid, blank lines in puzzle files, model defaults.
+- **Defect found:** a model reply reusing an earlier message id was *replaced* in LangGraph state by `add_messages`,
+  which crashed the controller node. Fix: the `llm` node gives every reply a fresh id (agent §2.1, v5); a regression test was added.
