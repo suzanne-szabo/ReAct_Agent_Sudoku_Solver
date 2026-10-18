@@ -86,6 +86,11 @@ def _tool_message(observation: Observation, call_id: str) -> ToolMessage:
     return ToolMessage(content=observation.to_json(), tool_call_id=call_id, name=observation.tool)
 
 
+def _reject_extra_calls(controller: Controller, extra: list[tuple[str, dict | str, str]]) -> list[ToolMessage]:
+    """P10 rejections for every call after the first, in call order (agent §2.2-§2.3)."""
+    return [_tool_message(controller.reject_extra_call(name, args), call_id) for name, args, call_id in extra]
+
+
 def _report_steps(context: dict, first_new_step: int) -> None:
     """Call ``on_step`` for each trace entry appended since ``first_new_step``."""
     on_step: StepCallback | None = context["on_step"]
@@ -154,11 +159,10 @@ def _controller_node(state: AgentState, config: RunnableConfig) -> Command:
     pending = None
     result = controller.validate(name, raw_args)
     if isinstance(result, Approval):
-        pending = result
+        pending = result              # extra calls are rejected after it executes (tool node)
     else:
         replies.append(_tool_message(result, call_id))
-    for extra_name, extra_args, extra_id in extra:
-        replies.append(_tool_message(controller.reject_extra_call(extra_name, extra_args), extra_id))
+        replies.extend(_reject_extra_calls(controller, extra))
     _report_steps(context, first_new_step)
 
     goto = END if controller.terminal_status is not None else "tool"
@@ -174,9 +178,10 @@ def _tool_node(state: AgentState, config: RunnableConfig) -> dict:
     controller: Controller = context["controller"]
     first_new_step = len(controller.trace)
     observation = controller.execute(pending)
+    (_, _, call_id), *extra = _tool_calls(_last_ai_message(state["messages"]))
+    replies = [_tool_message(observation, call_id), *_reject_extra_calls(controller, extra)]
     _report_steps(context, first_new_step)
-    _, _, call_id = _tool_calls(_last_ai_message(state["messages"]))[0]
-    return {"messages": [_tool_message(observation, call_id)], "pending": None}
+    return {"messages": replies, "pending": None}
 
 
 def _continue_node(state: AgentState, config: RunnableConfig) -> Command:

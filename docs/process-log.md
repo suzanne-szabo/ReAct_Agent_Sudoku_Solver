@@ -19,3 +19,17 @@ A running record of process events: spec revisions, findings from tests, and cod
   3. `.env` lookup location: the current working directory, never overriding existing variables — agent §6.
   4. The forced-cell format in `place_number` messages (`r{R}c{C}={D}`) — tools §4.1 — was only an example; it is now required.
   Without these, the tests would have had to guess, and the guesses would have locked in implementation details.
+
+## 2026-10-18 — Coding-agent implementation
+- A fresh coding agent (no access to the design conversation) received only `specs/`, `tests/`, `proplogic/` and
+  `puzzles/`, and was instructed not to edit them. It implemented `sudoku_agent/` (13 modules, ~1,900 lines).
+- Its result was **320 passed, 1 failed**. It left the failure in place and reported two spec defects:
+  1. `test_extra_calls_rejected_and_every_call_answered` expects trace order `[first call, P10]`, but
+     agent §2.2 as written rejected extra calls *before* the first call executed, giving `[P10, first call]`.
+     **Resolution (reviewer):** the spec was wrong. Trace order should follow call order. agent §2.2–2.3 were
+     amended so extra calls are rejected after the first call executes; `agent.py` was changed to match, and the
+     test was not changed.
+  2. Architecture §6 promised the terminal reason "in the final trace entry", which the trace model cannot
+     represent. **Resolution:** the spec was amended; the reason is reported in `RunResult.reason`.
+- The reviewer checked the module boundaries by searching the code: only `tools` calls state-changing methods; the graph reaches state only
+  through `Controller`; `validation` does not import `board`; `proplogic` is unmodified; no other solver is used.

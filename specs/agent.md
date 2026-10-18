@@ -56,8 +56,15 @@ Let `calls = ai.tool_calls + ai.invalid_tool_calls`, in the order received.
    call, the raw argument string is passed and fails P3.
    - If the result is an `Approval`, store it in `pending`.
    - If it is a rejection `Observation`, append a `ToolMessage` for it.
-3. For each **further** call: `controller.reject_extra_call(...)` and append its
-   `ToolMessage` (P10).
+3. Each **further** call is rejected with `controller.reject_extra_call(...)`
+   (P10), and its `ToolMessage` is appended **after** the first call's result,
+   so the trace and replies follow the order of the calls:
+   - if the first call was rejected, the extra calls are rejected here,
+     immediately after it;
+   - if the first call was approved, the extra calls are rejected in the `tool`
+     node, after the first call executes (§2.3).
+   *(v3, 2026-10-18: the coding agent found that v2 put the P10 entries in the
+   trace before the first call's entry, contradicting the test of this behavior.)*
 4. If a terminal status is already set at this point, route to END. Otherwise
    route to `tool`.
 
@@ -67,7 +74,8 @@ keeps the conversation valid for the chat API.
 ### 2.3 Node `tool`
 
 If `pending` is set: `obs = controller.execute(pending)`, append
-`ToolMessage(content=obs.to_json(), tool_call_id=…)`, then clear `pending`.
+`ToolMessage(content=obs.to_json(), tool_call_id=…)`, then reject any extra
+calls from the same turn (P10, §2.2 step 3), then clear `pending`.
 If `pending` is not set (the first call was rejected), do nothing.
 
 ### 2.4 Node `continue?`

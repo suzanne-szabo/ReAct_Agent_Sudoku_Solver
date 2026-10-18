@@ -275,7 +275,9 @@ the terminal status:
 5. **`MODEL_ERROR`** — the model call raised an exception.
 
 Once a terminal status is set it is final (policy P1). It is reported with a
-human-readable reason in the `RunResult` and in the final trace entry.
+human-readable reason in `RunResult.reason`. (v3: the earlier "and in the final trace
+ entry" was dropped. `TraceEntry` records tool calls only, and `NO_ACTION`/`MODEL_ERROR`
+ have no call to attach a reason to. The coding agent found this.)
 
 ## 7. Undo and knowledge-base synchronisation
 
