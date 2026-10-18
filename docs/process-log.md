@@ -58,3 +58,6 @@ A running record of process events: spec revisions, findings from tests, and cod
   (`docs/runs/2026-10-18_easy_gemma_v4.txt`). The model followed the `Forced:` cascade in each observation.
   Compared with the first v3 run (Qwen): a wasted `read_board`, then a P4 rejection by step 2.
 - Default model changed to Gemma (D19); the test was updated before the code.
+- Hard puzzle (Norvig hard1, 17 givens), Gemma: **SOLVED in 72 actions**: 64 placements, 7 `kb_infer_cell`, 1 submit,
+  with 0 rejections, 0 reads and 0 undos (`docs/runs/2026-10-18_hard_gemma_v4.txt` and `.jsonl`). Whenever forced placements ran
+  out, the model called `kb_infer_cell` as the v4 prompt directs; all 7 calls proved a digit and started new cascades.

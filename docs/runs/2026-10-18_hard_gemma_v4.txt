@@ -1,0 +1,88 @@
+python -m sudoku_agent puzzles/hard.txt --model Gemma-4-26B-A4B --trace-out docs/runs/hard_gemma.jsonl
+[  1] place_number {"col": 2, "digit": 4, "row": 6} -> ok: Placed 4 at r6c2. (budget 499)
+[  2] place_number {"col": 3, "digit": 3, "row": 8} -> ok: Placed 3 at r8c3. (budget 498)
+[  3] place_number {"col": 6, "digit": 1, "row": 8} -> ok: Placed 1 at r8c6. (budget 497)
+[  4] kb_infer_cell {"col": 2, "row": 7} -> ok: Proven: r7c2=8. (budget 496)
+[  5] place_number {"col": 2, "digit": 8, "row": 7} -> ok: Placed 8 at r7c2. (budget 495)
+[  6] kb_infer_cell {"col": 1, "row": 7} -> ok: Proven: r7c1=2. (budget 494)
+[  7] place_number {"col": 1, "digit": 2, "row": 7} -> ok: Placed 2 at r7c1. Forced: r7c3=9. (budget 493)
+[  8] place_number {"col": 3, "digit": 9, "row": 7} -> ok: Placed 9 at r7c3. (budget 492)
+[  9] kb_infer_cell {"col": 5, "row": 7} -> ok: Proven: r7c5=4. (budget 491)
+[ 10] place_number {"col": 5, "digit": 4, "row": 7} -> ok: Placed 4 at r7c5. Forced: r7c9=1. (budget 490)
+[ 11] place_number {"col": 7, "digit": 5, "row": 7} -> ok: Placed 5 at r7c7. (budget 489)
+[ 12] place_number {"col": 9, "digit": 1, "row": 7} -> ok: Placed 1 at r7c9. (budget 488)
+[ 13] kb_infer_cell {"col": 2, "row": 8} -> ok: Proven: r8c2=7. (budget 487)
+[ 14] place_number {"col": 2, "digit": 7, "row": 8} -> ok: Placed 7 at r8c2. Forced: r8c5=9, r9c2=6. (budget 486)
+[ 15] place_number {"col": 5, "digit": 9, "row": 8} -> ok: Placed 9 at r8c5. Forced: r8c7=6. (budget 485)
+[ 16] place_number {"col": 7, "digit": 6, "row": 8} -> ok: Placed 6 at r8c7. (budget 484)
+[ 17] place_number {"col": 2, "digit": 6, "row": 9} -> ok: Placed 6 at r9c2. (budget 483)
+[ 18] place_number {"col": 3, "digit": 7, "row": 1} -> ok: Placed 7 at r1c3. (budget 482)
+[ 19] kb_infer_cell {"col": 2, "row": 1} -> ok: Proven: r1c2=1. (budget 481)
+[ 20] place_number {"col": 2, "digit": 1, "row": 1} -> ok: Placed 1 at r1c2. (budget 480)
+[ 21] place_number {"col": 4, "digit": 1, "row": 2} -> ok: Placed 1 at r2c4. (budget 479)
+[ 22] place_number {"col": 4, "digit": 4, "row": 4} -> ok: Placed 4 at r4c4. (budget 478)
+[ 23] place_number {"col": 4, "digit": 8, "row": 9} -> ok: Placed 8 at r9c4. (budget 477)
+[ 24] kb_infer_cell {"col": 2, "row": 3} -> ok: Proven: r3c2=5. (budget 476)
+[ 25] place_number {"col": 2, "digit": 5, "row": 3} -> ok: Placed 5 at r3c2. Forced: r5c2=9. (budget 475)
+[ 26] place_number {"col": 2, "digit": 9, "row": 5} -> ok: Placed 9 at r5c2. (budget 474)
+[ 27] kb_infer_cell {"col": 4, "row": 1} -> ok: Proven: r1c4=3. (budget 473)
+[ 28] place_number {"col": 4, "digit": 3, "row": 1} -> ok: Placed 3 at r1c4. Forced: r5c4=5. (budget 472)
+[ 29] place_number {"col": 5, "digit": 3, "row": 4} -> ok: Placed 3 at r4c5. (budget 471)
+[ 30] place_number {"col": 4, "digit": 5, "row": 5} -> ok: Placed 5 at r5c4. Forced: r6c4=9. (budget 470)
+[ 31] place_number {"col": 4, "digit": 9, "row": 6} -> ok: Placed 9 at r6c4. Forced: r4c6=7. (budget 469)
+[ 32] place_number {"col": 6, "digit": 7, "row": 4} -> ok: Placed 7 at r4c6. Forced: r4c1=8, r9c6=5. (budget 468)
+[ 33] place_number {"col": 1, "digit": 8, "row": 4} -> ok: Placed 8 at r4c1. Forced: r4c9=9. (budget 467)
+[ 34] place_number {"col": 9, "digit": 9, "row": 4} -> ok: Placed 9 at r4c9. Forced: r4c7=1. (budget 466)
+[ 35] place_number {"col": 7, "digit": 1, "row": 4} -> ok: Placed 1 at r4c7. Forced: r4c3=5. (budget 465)
+[ 36] place_number {"col": 3, "digit": 5, "row": 4} -> ok: Placed 5 at r4c3. Forced: r6c3=6. (budget 464)
+[ 37] place_number {"col": 3, "digit": 6, "row": 6} -> ok: Placed 6 at r6c3. Forced: r5c3=1, r6c6=2. (budget 463)
+[ 38] place_number {"col": 3, "digit": 1, "row": 5} -> ok: Placed 1 at r5c3. (budget 462)
+[ 39] place_number {"col": 6, "digit": 2, "row": 6} -> ok: Placed 2 at r6c6. Forced: r5c6=6. (budget 461)
+[ 40] place_number {"col": 6, "digit": 6, "row": 5} -> ok: Placed 6 at r5c6. Forced: r1c6=9. (budget 460)
+[ 41] place_number {"col": 6, "digit": 9, "row": 1} -> ok: Placed 9 at r1c6. Forced: r1c8=2. (budget 459)
+[ 42] place_number {"col": 8, "digit": 2, "row": 1} -> ok: Placed 2 at r1c8. Forced: r1c5=6, r5c8=3. (budget 458)
+[ 43] place_number {"col": 5, "digit": 6, "row": 1} -> ok: Placed 6 at r1c5. Forced: r3c5=2. (budget 457)
+[ 44] place_number {"col": 5, "digit": 2, "row": 3} -> ok: Placed 2 at r3c5. Forced: r2c5=5, r3c3=8. (budget 456)
+[ 45] place_number {"col": 3, "digit": 2, "row": 2} -> ok: Placed 2 at r2c3. (budget 455)
+[ 46] place_number {"col": 5, "digit": 5, "row": 2} -> ok: Placed 5 at r2c5. Forced: r9c5=7. (budget 454)
+[ 47] place_number {"col": 3, "digit": 8, "row": 3} -> ok: Placed 8 at r3c3. Forced: r3c6=4. (budget 453)
+[ 48] place_number {"col": 6, "digit": 4, "row": 3} -> ok: Placed 4 at r3c6. Forced: r2c6=8. (budget 452)
+[ 49] place_number {"col": 6, "digit": 8, "row": 2} -> ok: Placed 8 at r2c6. (budget 451)
+[ 50] place_number {"col": 8, "digit": 3, "row": 5} -> ok: Placed 3 at r5c8. Forced: r5c1=7, r6c7=7, r9c8=9. (budget 450)
+[ 51] place_number {"col": 1, "digit": 7, "row": 5} -> ok: Placed 7 at r5c1. Forced: r5c9=2, r6c1=3. (budget 449)
+[ 52] place_number {"col": 9, "digit": 2, "row": 5} -> ok: Placed 2 at r5c9. Forced: r9c9=3. (budget 448)
+[ 53] place_number {"col": 1, "digit": 3, "row": 6} -> ok: Placed 3 at r6c1. (budget 447)
+[ 54] place_number {"col": 8, "digit": 1, "row": 3} -> ok: Placed 1 at r3c8. (budget 446)
+[ 55] place_number {"col": 7, "digit": 7, "row": 6} -> ok: Placed 7 at r6c7. Forced: r2c7=9, r6c9=8. (budget 445)
+[ 56] place_number {"col": 7, "digit": 9, "row": 2} -> ok: Placed 9 at r2c7. Forced: r2c1=6, r2c8=4, r3c7=3. (budget 444)
+[ 57] place_number {"col": 1, "digit": 6, "row": 2} -> ok: Placed 6 at r2c1. Forced: r3c1=9. (budget 443)
+[ 58] place_number {"col": 8, "digit": 4, "row": 2} -> ok: Placed 4 at r2c8. Forced: r2c9=7, r8c8=8. (budget 442)
+[ 59] place_number {"col": 9, "digit": 7, "row": 2} -> ok: Placed 7 at r2c9. (budget 441)
+[ 60] place_number {"col": 1, "digit": 9, "row": 3} -> ok: Placed 9 at r3c1. (budget 440)
+[ 61] place_number {"col": 7, "digit": 3, "row": 3} -> ok: Placed 3 at r3c7. Forced: r3c9=6, r9c7=2. (budget 439)
+[ 62] place_number {"col": 9, "digit": 6, "row": 3} -> ok: Placed 6 at r3c9. (budget 438)
+[ 63] place_number {"col": 9, "digit": 8, "row": 6} -> ok: Placed 8 at r6c9. Forced: r6c8=5, r8c9=4. (budget 437)
+[ 64] place_number {"col": 8, "digit": 5, "row": 6} -> ok: Placed 5 at r6c8. (budget 436)
+[ 65] place_number {"col": 8, "digit": 8, "row": 8} -> ok: Placed 8 at r8c8. (budget 435)
+[ 66] place_number {"col": 9, "digit": 4, "row": 8} -> ok: Placed 4 at r8c9. (budget 434)
+[ 67] place_number {"col": 5, "digit": 7, "row": 9} -> ok: Placed 7 at r9c5. (budget 433)
+[ 68] place_number {"col": 6, "digit": 5, "row": 9} -> ok: Placed 5 at r9c6. (budget 432)
+[ 69] place_number {"col": 7, "digit": 2, "row": 9} -> ok: Placed 2 at r9c7. (budget 431)
+[ 70] place_number {"col": 8, "digit": 9, "row": 9} -> ok: Placed 9 at r9c8. (budget 430)
+[ 71] place_number {"col": 9, "digit": 3, "row": 9} -> ok: Placed 3 at r9c9. (budget 429)
+[ 72] submit {} -> ok: The board is a valid solution. (budget 428)
+   123 456 789
+1  417 369 825
+2  632 158 947
+3  958 724 316
+   --- --- ---
+4  825 437 169
+5  791 586 432
+6  346 912 758
+   --- --- ---
+7  289 643 571
+8  573 291 684
+9  164 875 293
+Status: SOLVED
+Reason: The submitted board was validated as a correct solution.
+Actions used: 72
