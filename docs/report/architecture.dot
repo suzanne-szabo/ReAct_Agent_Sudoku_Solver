@@ -1,0 +1,47 @@
+digraph G {
+  graph [rankdir=TB, fontname="Helvetica", fontsize=11, nodesep=0.45, ranksep=0.5, pad=0.15, bgcolor="white", newrank=true];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#F4F6F8", color="#5B6770"];
+  edge  [fontname="Helvetica", fontsize=8.5, color="#5B6770", fontcolor="#333333"];
+
+  LLM [label="Golem LLM gateway (Gemma-4-26B-A4B)\nOpenAI-compatible, over Tailscale", fillcolor="#FFF4E0", color="#B7791F"];
+  prompts [label="prompts\nsystem prompt + per-turn status:\nboard, forced placements, candidates"];
+
+  subgraph cluster_agent {
+    label="agent — LangGraph ReAct loop (graph state: messages, pending approval)"; fontsize=10; style="rounded"; color="#2B6CB0";
+    llm_node  [label="llm node", fillcolor="#E6F0FA", color="#2B6CB0"];
+    ctl_node  [label="controller node", fillcolor="#E6F0FA", color="#2B6CB0"];
+    tool_node [label="tool node", fillcolor="#E6F0FA", color="#2B6CB0"];
+    cont_node [label="continue?", fillcolor="#E6F0FA", color="#2B6CB0", shape=diamond, style="filled"];
+    END [label="END", shape=oval, fillcolor="#EDEDED"];
+  }
+
+  controller [label="controller\npolicies P1–P10 · budget (500) · trace\nordered terminal checks · terminal status", fillcolor="#FDECEC", color="#C53030"];
+  tools [label="tools\n12 typed tool schemas (Pydantic) + executors\nonly code that changes board or KB"];
+
+  subgraph cluster_session {
+    label="session — owns one run's state"; fontsize=10; style="rounded,dashed"; color="#5B6770";
+    board [label="board\ngivens · placements · undo stack\ncandidates · forced placements"];
+    logic [label="logic (SudokuKB)\nrule layer from board + agent facts\ntell · ask · infer_cell · cache"];
+  }
+  proplogic [label="proplogic (vendored, unmodified)\nparser · CNF · DPLL entailment"];
+  validation [label="validation\nindependent submit check"];
+
+  {rank=same; LLM; prompts;}
+  LLM -> llm_node [label="tool call (tool_choice=required)", dir=both];
+  prompts -> llm_node [label="model input"];
+  llm_node -> ctl_node [label="AIMessage"];
+  ctl_node -> tool_node [label="Approval"];
+  tool_node -> cont_node [label="ToolMessage (observation)"];
+  cont_node -> llm_node [label="not terminal"];
+  cont_node -> END [label="terminal", style=dashed];
+  ctl_node -> END [label="terminal", style=dashed];
+
+  ctl_node -> controller [label="validate()"];
+  tool_node -> controller [label="execute()"];
+  controller -> tools [label="approved calls only"];
+  tools -> board [label="place / undo"];
+  tools -> logic [label="rebuild · tell · ask · infer\nclear · rollback"];
+  tools -> validation [label="submit"];
+  logic -> board [label="reads", style=dashed, constraint=false];
+  logic -> proplogic [label="clauses, entailment"];
+}

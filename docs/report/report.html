@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Developing a ReAct Sudoku Agent — U0-HW-08 Report</title>
+<meta name="author" content="Suzanne Szabo">
+<meta name="description" content="Report for U0-HW-08: repository URL, project structure diagram, development process, results and takeaway.">
+<style>
+  @page { size: Letter; margin: 0.8in 0.85in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font: 9pt Helvetica, Arial, sans-serif; color: #555; } }
+  body { font-family: "DejaVu Serif", Georgia, serif; font-size: 10.5pt; line-height: 1.42; color: #111; }
+  h1 { font-family: Helvetica, Arial, sans-serif; font-size: 19pt; margin: 0 0 2pt; }
+  h2 { font-family: Helvetica, Arial, sans-serif; font-size: 13pt; margin: 16pt 0 5pt; border-bottom: 1px solid #bbb; padding-bottom: 2pt; }
+  h3 { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; margin: 11pt 0 3pt; }
+  p { margin: 0 0 6pt; }
+  ul, ol { margin: 0 0 6pt 16pt; padding: 0; }
+  li { margin-bottom: 2pt; }
+  .meta { color: #333; margin-bottom: 10pt; }
+  a { color: #1a4f8b; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; }
+  figure { margin: 6pt 0 4pt; text-align: center; }
+  figure img { width: 6.2in; }
+  figcaption { font-size: 9pt; color: #333; text-align: left; margin-top: 3pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 4pt 0 8pt; }
+  caption { text-align: left; font-weight: bold; font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; margin-bottom: 3pt; }
+  th, td { border: 1px solid #999; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  .takeaway { border-left: 3pt solid #1a4f8b; padding: 4pt 8pt; background: #f3f6fa; }
+</style>
+</head>
+<body>
+<main>
+<h1>Developing a ReAct Sudoku Agent</h1>
+<p class="meta">Suzanne Szabo · U0-HW-08 · Artificial Intelligence, Utah Tech University · October 2026</p>
+
+<h2>1. Repository</h2>
+<p>Git repository: <a href="https://github.com/suzanne-szabo/ReAct_Agent_Sudoku_Solver">https://github.com/suzanne-szabo/ReAct_Agent_Sudoku_Solver</a></p>
+<p>The repository contains the specifications (<code>specs/</code>), the implementation (<code>sudoku_agent/</code>), the
+tests (<code>tests/</code>), run and test instructions (<code>README.md</code>), the process log
+(<code>docs/process-log.md</code>), and the logs and traces of the live runs (<code>docs/runs/</code>).</p>
+
+<h2>2. Project Structure and Component Interactions</h2>
+<figure>
+  <img src="architecture.png" alt="Diagram of the project structure. At the top, the prompts module supplies the model input (system prompt and a per-turn status message with the board, forced placements and candidates) to the llm node, which exchanges forced tool calls with the Golem LLM gateway running Gemma-4-26B-A4B. Inside a box labeled agent, LangGraph ReAct loop, the nodes run in order: llm node sends an AIMessage to the controller node; the controller node sends an Approval to the tool node; the tool node sends a ToolMessage observation to the continue decision; continue loops back to the llm node when the run is not terminal, or goes to END when it is; the controller node can also go directly to END when a terminal status is already set. The controller node calls validate on the controller module and the tool node calls execute on it. The controller module holds policies P1 to P10, the 500-action budget, the trace, the ordered terminal checks and the terminal status, and passes only approved calls to the tools module. The tools module, with 12 typed Pydantic tool schemas, is the only code that changes the board or knowledge base: it calls place and undo on board, rebuild, tell, ask, infer, clear and rollback on logic, and submit on validation. Board and logic sit inside a dashed box labeled session, which owns one run's state. Logic reads the board and sends clauses to the vendored, unmodified proplogic package for DPLL entailment. Validation is an independent submit check.">
+  <figcaption>Figure 1. Modules and allowed interactions. The model reaches application state only through the
+  controller (validate, then execute). Only <code>tools</code> changes the board or the knowledge base, and only
+  <code>validation</code> can establish success.</figcaption>
+</figure>
+<p>I designed the structure from my hand-drawn diagram of the loop (LLM, controller, tool, continue?) and then
+specified it in <code>specs/architecture.md</code>. Each turn, the model receives the system prompt, its last 12
+turns and a status message rebuilt by the application. It must answer with exactly one typed tool call
+(<code>tool_choice="required"</code>). The controller rejects invalid requests without changing anything, charges
+one action per call, records the trace and applies the terminal checks in a fixed order: <code>SOLVED</code>,
+<code>ACTION_LIMIT</code>, <code>REJECTION_LIMIT</code>, <code>NO_ACTION</code>, <code>MODEL_ERROR</code>.
+The knowledge base wraps the course <code>proplogic</code> package without modifying it. Its rule layer is
+generated from the board, so it is satisfiable exactly when the board can still be completed.</p>
+
+<h2>3. Development Process</h2>
+<p>I acted as the orchestrator: I made the architecture and design decisions and reviewed each change. Claude, a
+coding agent, drafted the specifications, tests and analysis under my direction, and a <em>separate</em> coding
+agent implemented the package from the specifications and tests alone. The 22 commits record each stage in order.</p>
+
+<h3>3.1 Specifications before code</h3>
+<p>Seven specifications define the modules, owned state, interfaces, typed tool schemas, knowledge-base syntax and
+query meaning, undo behavior, policies, action limits and terminal order. Design choices were measured rather than
+assumed. A benchmark showed that the full 729-variable Sudoku encoding took up to 22 s per query, so the rule
+layer covers only the remaining candidates (0.04–0.7 s). When the hardest puzzle still exceeded the 3 s target,
+I chose to keep the course solver, use no timeouts and relax the targets (decision D16) rather than write a new solver.</p>
+
+<h3>3.2 Black-box tests derived from the specifications</h3>
+<p>Black-box tests were written from the specifications before any implementation existed, and were committed while
+all of them failed. Expected values such as puzzle solutions, cascades and dead cells were computed by independent
+scripts. Writing the tests exposed <strong>four underspecified interfaces</strong> (session attributes, puzzle-loader
+output, <code>.env</code> location, forced-cell message format). These were fixed in the specifications before the
+tests were committed.</p>
+
+<h3>3.3 Implementation by a separate coding agent</h3>
+<p>A fresh coding agent received only the specifications, tests, puzzles and the vendored package, and was not
+allowed to edit them. It implemented all 13 modules (about 1,900 lines). Its first result was <strong>320 passed,
+1 failed</strong>. Instead of working around the failure, it reported two defects in my specifications: one rule
+put the trace entries for rejected extra calls in the wrong order, and another promised a terminal reason in a
+trace entry that cannot hold one. In review, I confirmed the module boundaries by searching the code, corrected
+both specifications, and changed the implementation to match the unchanged test.</p>
+
+<h3>3.4 Live runs, failures and revisions</h3>
+<ul>
+  <li><strong>First live run (Qwen3.8-27B) failed.</strong> It wasted its first action reading a board it already had,
+  then tried to place a digit in a given cell because it miscounted grid columns. The controller rejected the move
+  (policy P4) without changing anything, and one step took over a minute.</li>
+  <li><strong>I measured before changing anything.</strong> A latency script showed that Gemma-4-26B-A4B answered in
+  0.6–1.9 s against 7–10 s for Qwen. It also exposed a defect: one call waited 371 s despite the 120 s timeout,
+  because the client library retried twice on its own. I fixed it so the loop's single retry is the only one.</li>
+  <li><strong>Revision v4.</strong> A review of the tool surface found duplicate tools (<code>get_candidates</code>
+  duplicated <code>read_cell</code>) and descriptions that never said <em>when</em> to use a tool. The status message
+  now lists forced placements and every empty cell's candidates, the tools went from 13 to 12, and the prompt became
+  a simple loop: cheapest tools first, then the logic engine. Specifications and tests were updated first
+  (14 tests failed), then the code.</li>
+</ul>
+
+<h3>3.5 White-box testing after implementation</h3>
+<p>A coverage report showed the black-box suite reached 94% branch coverage, with the command-line interface untested.
+White-box tests written against the code raised coverage to 99%. They found a real defect: a model reply that reused
+an earlier message id <em>replaced</em> that message in LangGraph's state, which crashed the loop. The fix gives every
+reply a fresh id, and a regression test now covers it.</p>
+
+<h2>4. Results</h2>
+<table>
+  <caption>Table 1. Live runs with Gemma-4-26B-A4B (revision v4), 18 October 2026</caption>
+  <thead><tr><th scope="col">Puzzle</th><th scope="col">Status</th><th scope="col">Actions</th><th scope="col">Minimum possible</th><th scope="col">Logic-engine proofs</th><th scope="col">Rejections</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Easy (Wikipedia example, 30 givens)</th><td>Solved</td><td>52</td><td>52</td><td>0</td><td>0</td></tr>
+    <tr><th scope="row">Hard (Norvig hard1, 17 givens)</th><td>Solved</td><td>72</td><td>65</td><td>7</td><td>0</td></tr>
+    <tr><th scope="row">Expert (Inkala 2012, 21 givens)</th><td>Solved</td><td>71</td><td>61</td><td>10</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>The final suite has 346 passing tests: 298 black-box cases derived from the specifications, 18 white-box tests and
+the vendored package's 30 tests. Branch coverage is 99%. The actions above the minimum equal the number of
+logic-engine proofs, so no action was wasted.</p>
+
+<h2>5. Takeaway</h2>
+<p class="takeaway"><strong>[DRAFT — rewrite in your own words.]</strong> The process change I will keep is writing
+black-box tests from the specification before any implementation exists. Doing this exposed four vague interfaces
+before a line of code was written. Later, it let an independent coding agent show me two contradictions in my own
+specifications instead of quietly coding around them.</p>
+</main>
+</body>
+</html>
