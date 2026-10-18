@@ -52,3 +52,9 @@ A running record of process events: spec revisions, findings from tests, and cod
   (single candidates and only-place-in-unit cells) and every empty cell's candidates; the KB is used via `kb_infer_cell`
   when nothing is forced. `get_candidates` is removed (12 tools). Specs: board §4.3a, tools §2, agent §3 and §5, architecture D18.
 - The specs and tests were updated first; 14 tests failed against the v3 code, as expected, before implementation.
+
+## 2026-10-18 — First v4 live run
+- Easy puzzle, Gemma-4-26B-A4B: **SOLVED in 52 actions** (the minimum: 51 placements plus submit), with 0 rejections and 0 reads
+  (`docs/runs/2026-10-18_easy_gemma_v4.txt`). The model followed the `Forced:` cascade in each observation.
+  Compared with the first v3 run (Qwen): a wasted `read_board`, then a P4 rejection by step 2.
+- Default model changed to Gemma (D19); the test was updated before the code.

@@ -40,7 +40,7 @@ def solve(ctl):
 def test_config_defaults():
     c = Config()
     assert (c.max_actions, c.max_consecutive_rejections, c.history_window) == (500, 5, 12)
-    assert c.model_name == "Qwen3.8-27B"
+    assert c.model_name == "Gemma-4-26B-A4B"      # D12 (v4): chosen from live runs
 
 
 def test_accepted_call_observation():

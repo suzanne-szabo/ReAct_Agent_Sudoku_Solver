@@ -25,7 +25,7 @@ class Config:
 
     max_actions: int = 500
     max_consecutive_rejections: int = 5
-    model_name: str = "Qwen3.8-27B"
+    model_name: str = "Gemma-4-26B-A4B"
     history_window: int = 12        # used by agent (specs/agent.md §3)
 
 
