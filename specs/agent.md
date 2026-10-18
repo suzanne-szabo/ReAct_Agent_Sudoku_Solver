@@ -157,7 +157,8 @@ status message.
 
 - `llm.make_model(config)` returns
   `ChatOpenAI(base_url=GOLEM_BASE_URL, api_key=GOLEM_API_KEY, model=config.model_name, temperature=0, timeout=120)`.
-  - It reads `.env` if present (via `python-dotenv`).
+  - It reads `.env` from the current working directory if present (via
+    `python-dotenv`), without overriding variables already set.
   - It raises a clear `RuntimeError` if `GOLEM_API_KEY` is missing.
 - `python -m sudoku_agent PUZZLE_FILE [--model NAME] [--max-actions N] [--history N] [--quiet] [--trace-out FILE.jsonl]`
   - It prints one line per step (step, tool, args, accepted/policy, message,
@@ -195,7 +196,10 @@ status message.
   | `puzzles/expert.txt` | Arto Inkala (2012) | 21 | beyond single candidates; KB worst case |
 
 - `puzzles.load(path) -> Puzzle(name, puzzle: str, solution: str | None)`
-  parses this format. It raises `ValueError` on malformed content.
+  parses this format. `name` is the file's stem (`"easy"` for `easy.txt`).
+  `puzzle` and `solution` are normalized to exactly 81 characters, using `0` for
+  empty cells. It raises `ValueError` on malformed content (a wrong length, a bad
+  character, or more than one blank-line-separated section after the puzzle).
 
 ## 9. Test obligations (black-box, fake model, no network)
 

@@ -1,0 +1,23 @@
+[project]
+name = "sudoku-agent"
+version = "0.1.0"
+description = "Bounded ReAct Sudoku agent (LangGraph) with a propositional knowledge base"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.6",
+  "langgraph>=0.2",
+  "langchain-core>=0.3",
+  "langchain-openai>=0.2",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-cov>=5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "proplogic/tests"]
+pythonpath = ["."]
+markers = [
+  "slow: performance tests against the spec's timing targets (may take minutes)",
+  "whitebox: tests written after examining the implementation (supplement black-box tests)",
+]

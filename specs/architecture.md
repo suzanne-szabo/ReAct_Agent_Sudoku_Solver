@@ -192,7 +192,11 @@ docs/             Diagram, process log, report source
 
 - **Responsibility:** Create and hold one run's `Board`, `SudokuKB`, original
   puzzle string, configuration, and controller state.
-- **Interface:** `Session.new(puzzle: str, config: Config) -> Session`.
+- **Interface:** `Session.new(puzzle: str, config: Config) -> Session`, with
+  read-only attributes `board: Board`, `kb: SudokuKB` (built from that board),
+  `original_puzzle: str` (exactly as passed in) and `config: Config`. Controller
+  state lives in the `Controller` (§4.6), which is constructed with the session.
+  A malformed puzzle raises `ValueError`.
 - **Depends on:** `board`, `logic`.
 
 ### 4.8 `agent` — LangGraph ReAct loop
