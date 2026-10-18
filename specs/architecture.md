@@ -141,7 +141,6 @@ docs/             Diagram, process log, report source
 | `read_cell` | `row, col` | Returns the cell's digit, whether it is a given, and its candidates. Read-only. |
 | `read_row` / `read_col` | `row` / `col` | Returns that row or column. Read-only. |
 | `read_box` | `box` | Returns that box. Read-only. |
-| `get_candidates` | `row, col` | Returns the candidate digits for one cell. Read-only. |
 | `place_number` | `row, col, digit` | Places a digit; the observation lists newly forced cells. |
 | `undo` | — | Undoes the last placement and rolls back agent KB facts told since it. |
 | `kb_tell` | `formula` | Adds a fact or rule to the agent layer. |
@@ -329,3 +328,4 @@ in `RunResult`.
 | D15 | `kb_infer_cell` tool: a per-cell sweep of all candidates (from Rover's `inferred_safe_tiles`), one cell per call | One action instead of up to 9 `kb_ask` calls; stops short of a whole-board sweep that would solve the puzzle for the model. |
 | D16 | No timeouts on KB operations; generous performance targets (≤ 10 s per ask on easy/hard, ≤ 60 s on expert) | Orchestrator decision: let the model get every answer it needs. Keeps the vendored solver unchanged (option A over writing our own solver or using `pycosat`). |
 | D17 | Bundled puzzles easy / hard / expert, each verified to have a unique solution; solutions optional in other puzzle files | Instructor boards can be dropped in without solutions. |
+| D18 | *(v4)* The application hands the model ready-made board logic every turn: forced placements (single candidates and only-place-in-unit cells) and the candidates of every empty cell, fewest first. `get_candidates` is removed (12 tools), and the tool descriptions say when to use each tool | First live run: the model miscounted grid columns and wasted actions on `read_board`. Orchestrator decision: cheapest tools first, then the logic engine (`kb_infer_cell`) when nothing is forced. |

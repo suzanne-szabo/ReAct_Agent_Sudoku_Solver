@@ -14,7 +14,7 @@ from conftest import (
 )
 
 TOOL_NAMES = {
-    "read_board", "read_cell", "read_row", "read_col", "read_box", "get_candidates",
+    "read_board", "read_cell", "read_row", "read_col", "read_box",
     "place_number", "undo", "kb_tell", "kb_ask", "kb_infer_cell", "kb_clear", "submit",
 }
 
@@ -38,7 +38,7 @@ def state(session):
 # ---------------------------------------------------------------- §2 schemas
 
 class TestSchemas:
-    def test_exactly_thirteen_tools(self):
+    def test_exactly_twelve_tools(self):
         assert set(TOOL_SCHEMAS) == TOOL_NAMES
 
     def test_tool_definitions_names(self):
@@ -52,9 +52,19 @@ class TestSchemas:
         for d in tool_definitions():
             assert convert_to_openai_tool(d)["function"].get("description")
 
+    def test_descriptions_say_when_to_use(self):
+        # v4 (tools §2): read_* are marked rarely needed; kb_infer_cell is for when nothing is forced.
+        from langchain_core.utils.function_calling import convert_to_openai_tool
+        desc = {convert_to_openai_tool(d)["function"]["name"]: convert_to_openai_tool(d)["function"]["description"].lower()
+                for d in tool_definitions()}
+        for name in ("read_board", "read_row", "read_col", "read_box"):
+            assert "rarely needed" in desc[name], name
+        assert "forced" in desc["kb_infer_cell"]
+        assert all("1 action" in text for text in desc.values())
+
     @pytest.mark.parametrize("name,args", [
         ("read_board", {}), ("read_cell", {"row": 1, "col": 9}), ("read_row", {"row": 9}),
-        ("read_col", {"col": 1}), ("read_box", {"box": 5}), ("get_candidates", {"row": 2, "col": 2}),
+        ("read_col", {"col": 1}), ("read_box", {"box": 5}),
         ("place_number", {"row": 1, "col": 3, "digit": 4}), ("undo", {}),
         ("kb_tell", {"formula": "p"}), ("kb_ask", {"formula": "v134"}),
         ("kb_infer_cell", {"row": 1, "col": 3}), ("kb_clear", {}), ("submit", {}),
@@ -114,9 +124,6 @@ class TestReadTools:
         assert jd(run(easy_session, "read_box", box=9)) == {"box": 9, "cells": "28...5.79"}
         assert state(easy_session) == before
 
-    def test_get_candidates(self, easy_session):
-        assert jd(run(easy_session, "get_candidates", row=1, col=3)) == {"row": 1, "col": 3, "candidates": [1, 2, 4]}
-        assert jd(run(easy_session, "get_candidates", row=1, col=1))["candidates"] == []
 
 
 # ---------------------------------------------------------------- §4.1 place_number

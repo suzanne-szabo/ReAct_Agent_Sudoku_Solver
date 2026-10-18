@@ -6,7 +6,7 @@ import pytest
 
 from sudoku_agent.board import Board, PlaceResult, UndoResult
 from conftest import (
-    CASCADE_FORCED, CASCADE_PLACEMENT, EASY, EASY_EMPTY_COUNT, EASY_SOLUTION,
+    CASCADE_FORCED, CASCADE_PLACEMENT, EASY, EASY_EMPTY_COUNT, EASY_FORCED, EASY_SOLUTION,
     WRONG_WITH_DEAD, WRONG_WITH_DEAD_CELL, empty_cells_of, sol_digit, to_grid,
 )
 
@@ -168,6 +168,35 @@ class TestCandidatesAndPeers:
         assert (1, 1) not in p
         assert {(1, 9), (9, 1), (3, 3)} <= p
         assert (4, 4) not in p
+
+
+# ---------------------------------------------------------------- §4.3a forced placements (v4)
+
+class TestForcedPlacements:
+    def test_easy_start(self, easy_board):
+        assert easy_board.forced_placements() == EASY_FORCED
+
+    def test_all_forced_agree_with_solution(self, easy_board):
+        for r, c, d in easy_board.forced_placements():
+            assert sol_digit(EASY_SOLUTION, r, c) == d
+
+    def test_complete_board_has_none(self):
+        assert Board.from_string(EASY_SOLUTION).forced_placements() == []
+
+    def test_read_only(self, easy_board):
+        before = snapshot(easy_board)
+        easy_board.forced_placements()
+        assert snapshot(easy_board) == before
+
+    def test_updates_after_placement(self, easy_board):
+        easy_board.place(5, 5, 5)
+        forced = easy_board.forced_placements()
+        assert (5, 5, 5) not in forced
+        assert all(easy_board.cell(r, c) == 0 for r, c, _ in forced)
+
+    def test_no_duplicates_and_sorted(self, easy_board):
+        forced = easy_board.forced_placements()
+        assert forced == sorted(set(forced))
 
 
 # ---------------------------------------------------------------- §4.6 place

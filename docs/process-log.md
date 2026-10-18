@@ -43,3 +43,12 @@ A running record of process events: spec revisions, findings from tests, and cod
   No model returned hidden reasoning, so the minute-long step was most likely gateway load.
 - Defect found: a call waited 371 s despite the 120 s timeout because LangChain's client added 2 hidden retries.
   Fixed (`max_retries=0`); spec agent §6 amended and the test updated first.
+
+## 2026-10-18 — Revision v4: the application hands the model ready-made board logic
+- Motivation: the first live run showed coordinate miscounting and wasted `read_board` calls. A review of the tool surface
+  found `get_candidates` duplicated `read_cell`, `read_board` duplicated the status message, and the tool descriptions
+  never said *when* to use each tool.
+- Orchestrator decision: cheapest tools first, then the logic engine. The status message now lists forced placements
+  (single candidates and only-place-in-unit cells) and every empty cell's candidates; the KB is used via `kb_infer_cell`
+  when nothing is forced. `get_candidates` is removed (12 tools). Specs: board §4.3a, tools §2, agent §3 and §5, architecture D18.
+- The specs and tests were updated first; 14 tests failed against the v3 code, as expected, before implementation.

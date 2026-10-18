@@ -101,6 +101,20 @@ trailing spaces:
 - An empty cell may have `[]` (a "dead" cell); this means the current board
   has no valid completion.
 
+### 4.3a `forced_placements() -> list[Placement]` *(v4)*
+
+The placements forced by simple pencil-mark logic on the current board, without
+the knowledge base:
+
+- **Single candidate:** an empty cell whose `candidates` list has exactly one
+  digit `d` gives `(r, c, d)`.
+- **Only place in a unit:** for a row, column or box and a digit `d` not yet
+  in it, if exactly one empty cell of that unit has `d` as a candidate, that
+  cell gives `(r, c, d)`.
+
+The result has no duplicates and is sorted by (row, col, digit). It is empty when
+nothing is forced. A dead cell (no candidates) gives nothing. Read-only.
+
 ### 4.4 `peers(r, c) -> set[Cell]`
 
 The 20 cells that share a row, column or box with (r, c), excluding (r, c) itself.
@@ -160,6 +174,8 @@ Placing a digit that does not conflict but is not part of the solution is
 - Views: `cell`, `row`, `col` and `box` (including boxes 1, 5 and 9) against a
   known puzzle; `grid()` is a snapshot; the exact `render()` output.
 - Candidates: an empty cell; a filled cell returns `[]`; a dead cell.
+- `forced_placements()`: the exact list on the easy puzzle's starting board (4 single-candidate
+  cells and 12 only-place-in-unit cells, 16 entries); empty on a complete board; read-only.
 - Placement: each rejection code in priority order (a given cell that also
   conflicts reports `GIVEN_CELL`); acceptance; `forced_cells` on a constructed
   cascade; `dead_cells` after a wrong placement; argument type and range errors.

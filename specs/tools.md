@@ -24,7 +24,6 @@ schema errors.
 | `read_row` | `row: int 1–9` |
 | `read_col` | `col: int 1–9` |
 | `read_box` | `box: int 1–9` |
-| `get_candidates` | `row: int 1–9`, `col: int 1–9` |
 | `place_number` | `row: int 1–9`, `col: int 1–9`, `digit: int 1–9` |
 | `undo` | *(none)* |
 | `kb_tell` | `formula: str` (min length 1) |
@@ -33,10 +32,16 @@ schema errors.
 | `kb_clear` | *(none)* |
 | `submit` | *(none)* |
 
+- *(v4)* There are **12 tools**. `get_candidates` was removed: it duplicated `read_cell`, and every
+  status message now lists the candidates of all empty cells (agent §3).
 - `TOOL_SCHEMAS: dict[str, type[BaseModel]]` maps tool names to their schemas.
 - `tool_definitions()` returns the tools in the form LangChain's `bind_tools`
-  accepts. Each definition carries a one-sentence description, written in
-  `tools.py`, that tells the model what the tool returns and costs.
+  accepts. Each definition carries a description, written in `tools.py`, that tells
+  the model what the tool returns, **when to use it**, and that it costs 1 action.
+  *(v4)* The descriptions of `read_board`, `read_row`, `read_col` and `read_box` say
+  that they are rarely needed, because the status message already shows the board.
+  The description of `kb_infer_cell` says it is the tool to use when no forced
+  placement is listed, and the description of `kb_ask` says it is for custom formulas.
 - The formula length limit is enforced by `logic` (`TOO_LONG`), so that limit
   has a single source of truth.
 
@@ -74,7 +79,6 @@ cells, for example `"53..7...."`.
 | `read_row` | `{"row": r, "cells": "53..7...."}` | — |
 | `read_col` | `{"col": c, "cells": "…"}` | — |
 | `read_box` | `{"box": b, "cells": "…"}` (row-major within the box) | — |
-| `get_candidates` | `{"row", "col", "candidates": [..]}` (`[]` if filled) | — |
 | `place_number` | See §4.1. | `GIVEN_CELL`, `CELL_FILLED`, `CONFLICT` |
 | `undo` | See §4.2. | `EMPTY_STACK` |
 | `kb_tell` | `{"facts": count of agent facts}` | `PARSE_ERROR`, `INVALID_SYMBOL`, `TOO_LONG`, `INCONSISTENT`, `KB_INCONSISTENT` |
@@ -124,7 +128,7 @@ Read tools, `kb_ask` and `kb_infer_cell` never change the board or the KB's cont
 
 - **Schemas:** valid arguments are accepted. Missing fields, extra fields, out
   of range (0, 10), string, float and bool values are all schema errors.
-  `tool_definitions()` has exactly the 13 tool names.
+  `tool_definitions()` has exactly the 12 tool names.
 - **Each read tool** returns the specified `data` for a known puzzle and leaves
   the board and KB unchanged.
 - **`place_number`:**

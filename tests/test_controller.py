@@ -221,7 +221,7 @@ def test_validate_rejection_is_observation():
 
 @pytest.mark.parametrize("tool,args", [
     ("read_board", {}), ("read_cell", {"row": 5, "col": 5}), ("read_row", {"row": 2}),
-    ("read_col", {"col": 7}), ("read_box", {"box": 3}), ("get_candidates", {"row": 1, "col": 3}),
+    ("read_col", {"col": 7}), ("read_box", {"box": 3}),
     ("place_number", {"row": 1, "col": 3, "digit": 4}), ("kb_tell", {"formula": "p"}),
     ("kb_ask", {"formula": "v134"}), ("kb_infer_cell", {"row": 1, "col": 3}), ("kb_clear", {}),
 ])

@@ -16,7 +16,7 @@ from fakes import ScriptedModel, bad_json_turn, call, turn
 from conftest import EASY, EASY_SOLUTION, solution_placements, to_grid
 
 TOOL_NAMES = {
-    "read_board", "read_cell", "read_row", "read_col", "read_box", "get_candidates",
+    "read_board", "read_cell", "read_row", "read_col", "read_box",
     "place_number", "undo", "kb_tell", "kb_ask", "kb_infer_cell", "kb_clear", "submit",
 }
 

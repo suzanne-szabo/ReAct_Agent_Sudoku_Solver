@@ -97,11 +97,23 @@ The model input for each `llm` call is built fresh, in this order:
 2. **Recent history**: the last `config.history_window` (default 12) complete
    turns from `messages`. A turn is one `AIMessage` together with all of its
    `ToolMessage`s; the window never splits a turn.
-3. **`HumanMessage` status**, regenerated every turn:
+3. **`HumanMessage` status**, regenerated every turn *(v4: last three lines added)*:
    ```
    Current board (empty: N, budget remaining: B, undo depth: D, KB facts: F):
    <board.render()>
+   Forced placements: r5c5=5 r7c6=7 ...
+   Empty cells (fewest candidates first): r1c4:26 r3c1:12 ... r9c3:-
    ```
+   - **Forced placements:** `board.forced_placements()` as `r{R}c{C}={D}` separated by
+     spaces, or `none` when the list is empty.
+   - **Empty cells:** every empty cell as `r{R}c{C}:{candidates}`, with the candidate
+     digits joined (for example `26`) and `-` for a dead cell. Sorted by number of
+     candidates, then row, then column. `none` when the board is full.
+   - If any empty cell is dead, one more line follows:
+     `Contradiction: r{R}c{C} has no candidates; undo your last placement.`
+   - The application does this bookkeeping, so the model never has to count grid
+     columns or ask for candidates one cell at a time. It is the same pencil-mark
+     information `read_cell` gives for one cell. The knowledge base is not consulted.
    On the first turn this message is the whole task statement, preceded by
    `"Solve this Sudoku."`
 
@@ -145,17 +157,18 @@ must state:
    variables; formula syntax with one example);
 3. that every reply must be exactly **one** tool call, that each costs 1 action,
    and that the budget is shown in every observation;
-4. the recommended strategy, in this order:
-   - place any `forced` cells reported by the last placement;
-   - use `get_candidates` and place cells that have a single candidate;
-   - when no single-candidate cell remains, pick the empty cell with the fewest
-     candidates and call `kb_infer_cell` on it; place the proven digit if one is
-     returned; use `kb_ask` for specific questions, and `kb_tell` to record
-     helper facts;
-   - logic calls on the hardest puzzles can take a while, so prefer cheap tools first;
-   - if a placement reports `dead` cells or `kb_consistent: false`, `undo`
-     immediately;
-   - when `empty` is 0, `submit`;
+4. the per-turn loop *(v4: cheapest tools first, then the logic engine)*:
+   - read the status message (the board, forced placements and candidates arrive
+     every turn without an action, so `read_board` is rarely needed);
+   - if a forced placement is listed, place one with `place_number`;
+   - otherwise call `kb_infer_cell` on the first cell of the empty-cells list
+     (fewest candidates), and place the digit it proves; if it proves no digit,
+     try the next cell;
+   - if a placement reports `dead` cells or `kb_consistent: false`, or the status
+     shows a contradiction, call `undo` immediately;
+   - when empty is 0, call `submit`;
+   - `kb_ask` and `kb_tell` are for custom reasoning, and the `read_*` tools are
+     rarely needed;
 5. that only the application decides success, through `submit`.
 
 `prompts.status_message(session, controller) -> HumanMessage` builds the §3
@@ -229,7 +242,7 @@ status message.
 - **Invalid JSON arguments** become a P3 rejection, not a crash.
 - **Model errors:** one exception followed by a valid response recovers (retry);
   two consecutive exceptions end `MODEL_ERROR`.
-- **Binding:** `tool_choice="required"` and all 13 tools are bound.
+- **Binding:** `tool_choice="required"` and all 12 tools are bound.
 - **History window:** with `history_window=2`, the model input holds the system
   message, at most 2 complete turns, and the status message, and never an
   orphaned `ToolMessage`.

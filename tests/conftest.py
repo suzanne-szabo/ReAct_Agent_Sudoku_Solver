@@ -45,6 +45,8 @@ def solution_placements(puzzle: str, solution: str) -> list[tuple[int, int, int]
 WRONG_LEGAL_NO_DEAD = (1, 3, 1)      # r1c3 candidates are {1,2,4}; solution is 4; no peer dies
 WRONG_WITH_DEAD = (1, 9, 4)          # solution is 2; leaves r7c9 with no candidates
 WRONG_WITH_DEAD_CELL = (7, 9)
+# forced_placements() on EASY's starting board (computed independently; all agree with the solution):
+EASY_FORCED = [(1, 6, 8), (1, 8, 1), (3, 5, 4), (3, 7, 5), (5, 3, 6), (5, 5, 5), (5, 7, 7), (6, 3, 3), (6, 7, 8), (7, 1, 9), (7, 6, 7), (7, 9, 4), (8, 2, 8), (8, 7, 6), (8, 8, 3), (9, 7, 1)]
 # A correct placement on EASY whose cascade forces four peers:
 CASCADE_PLACEMENT = (3, 6, 2)
 CASCADE_FORCED = [(1, 4, 6), (3, 1, 1), (3, 4, 3), (9, 6, 6)]

@@ -88,7 +88,7 @@ def test_malformed_puzzle_files(tmp_path, content):
 def test_system_prompt_covers_required_points():
     from sudoku_agent.prompts import SYSTEM_PROMPT
     text = SYSTEM_PROMPT.lower()
-    for word in ("submit", "undo", "kb_infer_cell", "get_candidates", "kb_ask", "forced", "one tool call"):
+    for word in ("submit", "undo", "kb_infer_cell", "place_number", "kb_ask", "forced placement", "one tool call"):
         assert word in text, word
     assert "v" in SYSTEM_PROMPT and "1" in SYSTEM_PROMPT
 
@@ -105,6 +105,41 @@ def test_status_message_format():
     assert isinstance(msg, HumanMessage)
     assert "Current board (empty: 50, budget remaining: 498, undo depth: 1, KB facts: 1):" in msg.content
     assert s.board.render() in msg.content
+
+
+def _status_lines(session):
+    from sudoku_agent.prompts import status_message
+    return status_message(session, Controller(session, session.config)).content.splitlines()
+
+
+def test_status_lists_forced_placements_and_candidates():
+    # v4 (agent §3): forced placements and every empty cell's candidates, fewest first.
+    from conftest import EASY_FORCED
+    lines = _status_lines(Session.new(EASY, Config()))
+    forced = "Forced placements: " + " ".join(f"r{r}c{c}={d}" for r, c, d in EASY_FORCED)
+    assert forced in lines
+    empty_line = next(l for l in lines if l.startswith("Empty cells (fewest candidates first): "))
+    entries = empty_line.split(": ", 1)[1].split()
+    assert entries[:6] == ["r5c5:5", "r7c6:7", "r7c9:4", "r8c8:3", "r1c4:26", "r3c1:12"]
+    assert len(entries) == 51
+    assert "r1c3:124" in entries
+    assert not any(l.startswith("Contradiction") for l in lines)
+
+
+def test_status_shows_dead_cell_contradiction():
+    from conftest import WRONG_WITH_DEAD
+    s = Session.new(EASY, Config())
+    Controller(s, s.config).handle("place_number", dict(zip(("row", "col", "digit"), WRONG_WITH_DEAD)))
+    lines = _status_lines(s)
+    empty_line = next(l for l in lines if l.startswith("Empty cells"))
+    assert empty_line.split(": ", 1)[1].split()[0] == "r7c9:-"
+    assert "Contradiction: r7c9 has no candidates; undo your last placement." in lines
+
+
+def test_status_on_full_board():
+    lines = _status_lines(Session.new(EASY_SOLUTION, Config()))
+    assert "Forced placements: none" in lines
+    assert "Empty cells (fewest candidates first): none" in lines
 
 
 # ---------------------------------------------------------------- llm
